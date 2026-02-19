@@ -550,6 +550,32 @@ static inline FusionEuler FusionQuaternionToEuler(const FusionQuaternion q) {
     return euler;
 }
 
+/**
+ * @brief  Extract a tilt-compensated compass heading (0…360°) directly from a quaternion.
+ *         Assumes the quaternion is in the NED convention passed into FusionAhrs.
+ *
+ * @param  q    The AHRS quaternion (q.w, q.x, q.y, q.z).
+ * @return      Heading in degrees: 0 = North, increases clockwise.
+ */
+static inline float FusionQuaternionToHeading(const FusionQuaternion quaternion)
+{
+#define Q quaternion.element
+    // Standard yaw extraction: 2*(w*z + x*y) / (1 - 2*(y²+z²))
+    float siny_cosp = 2.0f * (Q.w * Q.z - Q.x * Q.y);
+    float cosy_cosp = 1.0f - 2.0f * (Q.y * Q.y + Q.z * Q.z);
+
+    // atan2 returns –180…+180; convert to 0…360
+    float yaw = atan2f(siny_cosp, cosy_cosp) * (180.0f / M_PI);
+
+    // yaw += 180.0f;
+    if (yaw < 0.0f)
+    {
+        yaw += 360.0f;
+    }
+    return yaw;
+#undef Q
+}
+
 #endif
 
 //------------------------------------------------------------------------------
